@@ -52,19 +52,15 @@
         }
         button {
             background-color: #b30000;
-            color: white;
-            padding: 10px 20px;
+            color: #fff;
+            padding: 0.5rem 1rem;
             border: none;
             cursor: pointer;
-            text-transform: uppercase;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
         }
         button:hover {
             background-color: #800000;
-        }
-        pre {
-            background-color: #333;
-            padding: 1rem;
-            overflow: auto;
         }
     </style>
 </head>
@@ -81,24 +77,205 @@
     <div class="container">
         <div class="section">
             <h2>Free Scripts</h2>
-            <p>Here is a free Unity script:</p>
-            <!-- Button to copy text -->
-            <button onclick="copyText()">Copy Script</button>
-            <!-- Text to be copied -->
-            <pre id="textToCopy">
+            <p>Here are two free Unity scripts:</p>
+            <!-- Button to copy FPS Player script -->
+            <button onclick="copyFPS()">Copy FPS Player Script</button>
+            <!-- FPS Player script -->
+            <pre id="scriptFPS">
+using System.Collections;
+using UnityEngine;
+
+public class FPS_Player : MonoBehaviour
+{
+     public bool CanMove { get; private set; } = true;
+    private bool IsSprinting => canSprint && Input.GetKey(sprintKey);
+    private bool ShouldJump => Input.GetKeyDown(jumpkey) && characterController.isGrounded;
+    private bool ShouldCrouch => Input.GetKeyDown(crouchKey) && !duringCrouchAnimation && characterController.isGrounded;
+
+    [Header("Functional Options")]
+    [SerializeField] private bool canSprint = true;
+    [SerializeField] private bool canJump = true;
+    [SerializeField] private bool canCrouch = true;
+    [SerializeField] private bool canUseHeadbob = true;
+
+    [Header("Controls")]
+    [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
+    [SerializeField] private KeyCode jumpkey = KeyCode.Space;
+    [SerializeField] private KeyCode crouchKey = KeyCode.LeftControl;
+
+    [Header("Movement Parameters")]
+    [SerializeField] private float walkSpeed = 3.0f;
+    [SerializeField] private float sprintSpeed = 6.0f;
+    [SerializeField] private float crouchSpeed = 1.5f;
+
+    [Header("Look Parameters")]
+    [SerializeField, Range(1, 10)] private float lookSpeedX = 2.0f;
+    [SerializeField, Range(1, 10)] private float lookSpeedY = 2.0f;
+    [SerializeField, Range(1, 180)] private float upperLookLimit = 80.0f;
+    [SerializeField, Range(1, 180)] private float lowerLookLimit = 80.0f;
+
+    [Header("Jumping Parameters")]
+    [SerializeField] private float jumpForce = 8.0f;
+    [SerializeField] private float gravity = 30.0f;
+
+    [Header("Crouch Parameters")]
+    [SerializeField] private float crouchHeight = 0.5f;
+    [SerializeField] private float standingHeight = 2f;
+    [SerializeField] private float timeToCrouch = 0.25f;
+    [SerializeField] private Vector3 crouchingCenter = new Vector3(0, 0.5f, 0);
+    [SerializeField] private Vector3 standingCenter = new Vector3(0, 0, 0);
+    private bool isCrouching;
+    private bool duringCrouchAnimation;
+
+    [Header("Headbob Parameters")]
+    [SerializeField] private float walkBobSpeed = 14f;
+    [SerializeField] private float walkBobAmount = 0.05f;
+    [SerializeField] private float sprintBobSpeed = 18f;
+    [SerializeField] private float sprintBobAmount = 0.11f;
+    [SerializeField] private float crouchBobSpeed = 8f;
+    [SerializeField] private float crouchBobAmount = 0.025f;
+    private float defaultYPos = 0;
+    private float timer;
+
+    private Camera playerCamera;
+    private CharacterController characterController;
+
+    private Vector3 moveDirection;
+    private Vector2 currentInput;
+
+    private float rotationX = 0;
+
+    void Awake()
+    {
+        playerCamera = GetComponentInChildren<Camera>();
+        characterController = GetComponent<CharacterController>();
+        defaultYPos = playerCamera.transform.localPosition.y;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    void Update()
+    {
+        if (CanMove)
+        {
+            HandleMovementInput();
+            HandleMouseLook();
+
+            if (canJump)
+                HandleJump();
+
+            if (canCrouch)
+                HandleCrouch();
+
+            if (canUseHeadbob)
+                HandleHeadbob();
+
+            ApplyFinalMovements();
+        }
+    }
+
+    private void HandleMovementInput()
+    {
+        currentInput = new Vector2((IsSprinting ? sprintSpeed : isCrouching ? crouchSpeed : walkSpeed) * Input.GetAxis("Vertical"),
+                                   (IsSprinting ? sprintSpeed : isCrouching ? crouchSpeed : walkSpeed) * Input.GetAxis("Horizontal"));
+
+        float moveDirectionY = moveDirection.y;
+        moveDirection = (transform.TransformDirection(Vector3.forward) * currentInput.x) + (transform.TransformDirection(Vector3.right) * currentInput.y);
+        moveDirection.y = moveDirectionY;
+    }
+
+    private void HandleMouseLook()
+    {
+        rotationX -= Input.GetAxis("Mouse Y") * lookSpeedY;
+        rotationX = Mathf.Clamp(rotationX, -upperLookLimit, lowerLookLimit);
+        playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+        transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeedX, 0);
+    }
+
+    private void HandleJump()
+    {
+        if (ShouldJump)
+            moveDirection.y = jumpForce;
+    }
+
+    private void HandleCrouch()
+    {
+        if (ShouldCrouch)
+            StartCoroutine(CrouchStand());
+    }
+
+    private void HandleHeadbob()
+    {
+        if (!characterController.isGrounded) return;
+
+        if (Mathf.Abs(moveDirection.x) > 0.1f || Mathf.Abs(moveDirection.z) > 0.1f)
+        {
+            timer += Time.deltaTime * (isCrouching ? crouchBobSpeed : IsSprinting ? sprintBobSpeed : walkBobSpeed);
+            playerCamera.transform.localPosition = new Vector3(
+                 playerCamera.transform.localPosition.x,
+                 defaultYPos + Mathf.Sin(timer) * (isCrouching ? crouchBobAmount : IsSprinting ? sprintBobAmount : walkBobAmount),
+                 playerCamera.transform.localPosition.z);
+        }
+    }
+
+    private void ApplyFinalMovements()
+    {
+        if (!characterController.isGrounded)
+            moveDirection.y -= gravity * Time.deltaTime;
+
+        characterController.Move(moveDirection * Time.deltaTime);
+    }
+
+    private IEnumerator CrouchStand()
+    {
+        if (isCrouching && Physics.Raycast(playerCamera.transform.position, Vector3.up, 1f))
+            yield break;
+
+        duringCrouchAnimation = true;
+
+        float timeElapsed = 0;
+        float targetHeight = isCrouching ? standingHeight : crouchHeight;
+        float currentHeight = characterController.height;
+        Vector3 targetCenter = isCrouching ? standingCenter : crouchingCenter;
+        Vector3 currentCenter = characterController.center;
+
+        while (timeElapsed < timeToCrouch)
+        {
+            characterController.height = Mathf.Lerp(currentHeight, targetHeight, timeElapsed / timeToCrouch);
+            characterController.center = Vector3.Lerp(currentCenter, targetCenter, timeElapsed / timeToCrouch);
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        characterController.height = targetHeight;
+        characterController.center = targetCenter;
+
+        isCrouching = !isCrouching;
+
+        duringCrouchAnimation = false;
+        canJump = !canJump;
+        canSprint = !canSprint;
+    }
+            </pre>
+            <br>
+            <!-- Button to copy EndlessTerrain script -->
+            <button onclick="copyTerrain()">Copy EndlessTerrain Script</button>
+            <!-- EndlessTerrain script -->
+            <pre id="scriptTerrain">
 using UnityEngine;
 using System.Collections.Generic;
 
 public class EndlessTerrain : MonoBehaviour
 {
-    public GameObject terrainPrefab;
+   public GameObject terrainPrefab;
     public Transform parentContainer; // Empty game object to contain spawned chunks
 
     public Transform playerTransform; // Player's transform
     public float chunkSize = 100f; // Size of each terrain chunk
 
     private int chunksVisibleInViewDistance = 2;
-    private Dictionary<Vector2, TerrainChunk> terrainChunkDictionary = new Dictionary<Vector2, TerrainChunk>();
+    private Dictionary terrainChunkDictionary = new Dictionary();
     private float lastSpawnTime; // Track the time when the last chunk was spawned
     public float spawnDelay = 1f; // Delay between chunk spawns
 
@@ -186,27 +363,25 @@ public class EndlessTerrain : MonoBehaviour
         <p>I Got The Good Stuff</p>
     </footer>
     <script>
-        function copyText() {
-            // Get the text field
-            var copyText = document.getElementById("textToCopy").innerText;
-            
-            // Create a temporary text area element
+        function copyFPS() {
+            var textToCopy = document.getElementById("scriptFPS").innerText;
+            copyToClipboard(textToCopy, "FPS Player Script");
+        }
+
+        function copyTerrain() {
+            var textToCopy = document.getElementById("scriptTerrain").innerText;
+            copyToClipboard(textToCopy, "EndlessTerrain Script");
+        }
+
+        function copyToClipboard(text, scriptName) {
             var tempTextArea = document.createElement("textarea");
-            tempTextArea.value = copyText;
+            tempTextArea.value = text;
             document.body.appendChild(tempTextArea);
-            
-            // Select the text field
             tempTextArea.select();
-            tempTextArea.setSelectionRange(0, 99999); // For mobile devices
-            
-            // Copy the text inside the text field
+            tempTextArea.setSelectionRange(0, 99999);
             document.execCommand("copy");
-            
-            // Remove the temporary text area element
             document.body.removeChild(tempTextArea);
-            
-            // Alert the copied text
-            alert("Copied the text: " + copyText);
+            alert(scriptName + " copied to clipboard!");
         }
     </script>
 </body>
