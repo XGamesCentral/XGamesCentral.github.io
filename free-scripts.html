@@ -83,6 +83,7 @@
             <!-- FPS Player script -->
             <pre id="scriptFPS">
 
+
 using System.Collections;
 using UnityEngine;
 
@@ -260,7 +261,15 @@ public class FPS_Player : MonoBehaviour
     }
 
 }
-            
+
+            </pre>
+            <br>
+            <!-- Button to copy EndlessTerrain script -->
+            <button onclick="copyTerrain()">Copy EndlessTerrain Script</button>
+            <!-- EndlessTerrain script -->
+            <pre id="scriptTerrain">
+
+
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -355,6 +364,35 @@ public class EndlessTerrain : MonoBehaviour
         }
     }
 }
+
+
+            </pre>
+        </div>
+    </div>
+    <footer>
+        <p>I Got The Good Stuff</p>
+    </footer>
+    <script>
+        function copyFPS() {
+            var textToCopy = document.getElementById("scriptFPS").innerText;
+            copyToClipboard(textToCopy, "FPS Player Script");
+        }
+
+        function copyTerrain() {
+            var textToCopy = document.getElementById("scriptTerrain").innerText;
+            copyToClipboard(textToCopy, "EndlessTerrain Script");
+        }
+
+        function copyToClipboard(text, scriptName) {
+            var tempTextArea = document.createElement("textarea");
+            tempTextArea.value = text;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            tempTextArea.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            document.body.removeChild(tempTextArea);
+            alert(scriptName + " copied to clipboard!");
+        }
     </script>
 </body>
 </html>
