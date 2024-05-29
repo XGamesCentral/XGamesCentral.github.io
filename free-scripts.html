@@ -62,6 +62,16 @@
         button:hover {
             background-color: #800000;
         }
+        .code-box {
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin-top: 1rem;
+            white-space: pre-wrap; /* Wrap lines */
+            word-wrap: break-word; /* Wrap long words */
+        }
     </style>
 </head>
 <body>
@@ -81,9 +91,7 @@
             <!-- Button to copy FPS Player script -->
             <button onclick="copyFPS()">Copy FPS Player Script</button>
             <!-- FPS Player script -->
-            <pre id="scriptFPS">
-
-
+            <pre id="scriptFPS" class="code-box">
 using System.Collections;
 using UnityEngine;
 
@@ -261,15 +269,12 @@ public class FPS_Player : MonoBehaviour
     }
 
 }
-
             </pre>
             <br>
             <!-- Button to copy EndlessTerrain script -->
             <button onclick="copyTerrain()">Copy EndlessTerrain Script</button>
             <!-- EndlessTerrain script -->
-            <pre id="scriptTerrain">
-
-
+            <pre id="scriptTerrain" class="code-box">
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -364,8 +369,6 @@ public class EndlessTerrain : MonoBehaviour
         }
     }
 }
-
-
             </pre>
         </div>
     </div>
